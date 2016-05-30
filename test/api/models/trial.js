@@ -1,4 +1,7 @@
+'use strict';
+
 const should = require('should');
+const _ = require('lodash');
 const Trial = require('../../../api/models/trial');
 const Location = require('../../../api/models/location');
 
@@ -15,41 +18,41 @@ describe('Trial', () => {
     Trial.relatedModels.should.deepEqual([
       'locations',
       'interventions',
-      'problems',
+      'conditions',
       'persons',
       'organisations',
+      'records',
+      'records.source',
+      'publications',
+      'publications.source',
     ]);
   });
 
   describe('locations', () => {
     it('is an empty array if there\'re none', () => {
-      should(new Trial().toJSON().locations).deepEqual([]);
+      should(toJSON(new Trial()).locations).deepEqual([]);
     });
 
     it('adds the locations and its metadata from relationship into the resulting JSON', () => {
       let trial_id;
       let loc;
 
-      return fixtures.trial().save()
+      return factory.create('trial')
         .then((trial) => {
           trial_id = trial.id;
 
-          return fixtures.location().save().then((_loc) => {
+          return factory.create('location').then((_loc) => {
             loc = _loc;
             return trial.locations().attach({
-              location_id: _loc.id,
+              location_id: loc.id,
               role: 'recruitment_countries',
-              context: JSON.stringify(''),
             });
           });
         }).then((trial) => {
           return new Trial({ id: trial_id }).fetch({ withRelated: 'locations' })
         }).then((trial) => {
-          should(trial.toJSON().locations).deepEqual([
-            {
-              role: 'recruitment_countries',
-              attributes: loc.toJSON(),
-            }
+          should(toJSON(trial).locations).deepEqual([
+            Object.assign({ role: 'recruitment_countries' }, toJSON(loc)),
           ]);
         });
     });
@@ -57,69 +60,59 @@ describe('Trial', () => {
 
   describe('interventions', () => {
     it('is an empty array if there\'re none', () => {
-      should(new Trial().toJSON().interventions).deepEqual([]);
+      should(toJSON(new Trial).interventions).deepEqual([]);
     });
 
     it('adds the interventions and its metadata from relationship into the resulting JSON', () => {
       let trial_id;
       let intervention;
 
-      return fixtures.trial().save()
+      return factory.create('trial')
         .then((trial) => {
           trial_id = trial.id;
 
-          return fixtures.intervention().save().then((_intervention) => {
+          return factory.create('intervention').then((_intervention) => {
             intervention = _intervention;
 
             return trial.interventions().attach({
               intervention_id: intervention.id,
-              role: 'other',
-              context: JSON.stringify(''),
             });
           });
         }).then((trial) => {
           return new Trial({ id: trial_id }).fetch({ withRelated: 'interventions' })
         }).then((trial) => {
-          should(trial.toJSON().interventions).deepEqual([
-            {
-              role: 'other',
-              attributes: intervention.toJSON(),
-            }
+          should(toJSON(trial).interventions).deepEqual([
+            toJSON(intervention),
           ]);
         });
     });
   });
 
-  describe('problems', () => {
+  describe('conditions', () => {
     it('is an empty array if there\'re none', () => {
-      should(new Trial().toJSON().problems).deepEqual([]);
+      should(toJSON(new Trial()).conditions).deepEqual([]);
     });
 
-    it('adds the problems and its metadata from relationship into the resulting JSON', () => {
+    it('adds the conditions and its metadata from relationship into the resulting JSON', () => {
       let trial_id;
-      let problem;
+      let condition;
 
-      return fixtures.trial().save()
+      return factory.create('trial')
         .then((trial) => {
           trial_id = trial.id;
 
-          return fixtures.problem().save().then((_problem) => {
-            problem = _problem;
+          return factory.create('condition').then((_condition) => {
+            condition = _condition;
 
-            return trial.problems().attach({
-              problem_id: problem.id,
-              role: 'other',
-              context: JSON.stringify(''),
+            return trial.conditions().attach({
+              condition_id: condition.id,
             });
           });
         }).then((trial) => {
-          return new Trial({ id: trial_id }).fetch({ withRelated: 'problems' })
+          return new Trial({ id: trial_id }).fetch({ withRelated: 'conditions' })
         }).then((trial) => {
-          should(trial.toJSON().problems).deepEqual([
-            {
-              role: 'other',
-              attributes: problem.toJSON(),
-            }
+          should(toJSON(trial).conditions).deepEqual([
+            toJSON(condition),
           ]);
         });
     });
@@ -127,34 +120,30 @@ describe('Trial', () => {
 
   describe('persons', () => {
     it('is an empty array if there\'re none', () => {
-      should(new Trial().toJSON().persons).deepEqual([]);
+      should(toJSON(new Trial()).persons).deepEqual([]);
     });
 
     it('adds the persons and its metadata from relationship into the resulting JSON', () => {
       let trial_id;
       let person;
 
-      return fixtures.trial().save()
+      return factory.create('trial')
         .then((trial) => {
           trial_id = trial.id;
 
-          return fixtures.person().save().then((_person) => {
+          return factory.create('person').then((_person) => {
             person = _person;
 
             return trial.persons().attach({
               person_id: person.id,
               role: 'other',
-              context: JSON.stringify(''),
             });
           });
         }).then((trial) => {
           return new Trial({ id: trial_id }).fetch({ withRelated: 'persons' })
         }).then((trial) => {
-          should(trial.toJSON().persons).deepEqual([
-            {
-              role: 'other',
-              attributes: person.toJSON(),
-            }
+          should(toJSON(trial).persons).deepEqual([
+            Object.assign({ role: 'other' }, toJSON(person)),
           ]);
         });
     });
@@ -162,36 +151,114 @@ describe('Trial', () => {
 
   describe('organisations', () => {
     it('is an empty array if there\'re none', () => {
-      should(new Trial().toJSON().organisations).deepEqual([]);
+      should(toJSON(new Trial()).organisations).deepEqual([]);
     });
 
     it('adds the organisations and its metadata from relationship into the resulting JSON', () => {
       let trial_id;
       let organisation;
 
-      return fixtures.trial().save()
+      return factory.create('trial')
         .then((trial) => {
           trial_id = trial.id;
 
-          return fixtures.organisation().save().then((_organisation) => {
+          return factory.create('organisation').then((_organisation) => {
             organisation = _organisation;
 
             return trial.organisations().attach({
               organisation_id: organisation.id,
               role: 'other',
-              context: JSON.stringify(''),
             });
           });
         }).then((trial) => {
           return new Trial({ id: trial_id }).fetch({ withRelated: 'organisations' })
         }).then((trial) => {
-          should(trial.toJSON().organisations).deepEqual([
-            {
-              role: 'other',
-              attributes: organisation.toJSON(),
-            }
+
+          should(toJSON(trial).organisations).deepEqual([
+            Object.assign({ role: 'other' }, toJSON(organisation)),
           ]);
         });
+    });
+  });
+
+  describe('records', () => {
+    it('is an empty array if there\'re none', () => {
+      should(toJSON(new Trial()).records).deepEqual([]);
+    });
+
+    it('adds the records and their sources into the resulting JSON', () => {
+      return factory.create('record')
+        .then((record) => {
+          const source = record.related('source');
+
+          return new Trial({ id: record.attributes.trial_id })
+            .fetch({ withRelated: ['records', 'records.source'] })
+            .then((trial) => {
+              should(toJSON(trial).records).deepEqual([
+                toJSON(record.toJSONSummary()),
+              ]);
+            });
+        });
+    });
+  });
+
+  describe('trialsPerYear', () => {
+    it('is an empty array if there\'re none', () => {
+      return new Trial().trialsPerYear().then((result) => {
+        should(result).deepEqual([]);
+      });
+    });
+
+    it('returns trials count per year', () => {
+      const registrationDates = [
+        { registration_date: '2016-01-01'},
+        { registration_date: '2015-01-01'},
+        { registration_date: '2016-01-01'},
+      ];
+
+      return factory.createMany('trial', registrationDates)
+        .then(() => new Trial().trialsPerYear())
+        .then((result) => {
+          should(result).deepEqual([
+            { year: 2015, count: 1},
+            { year: 2016, count: 2},
+          ]);
+        });
+    });
+  });
+
+  describe('virtuals', () => {
+    describe('has_discrepancies', () => {
+      it('returns false if there\'re no discrepancies in the records', () => {
+        let trial_id;
+
+        return factory.create('record')
+          .then((record) => {
+            const baseFields = _.pick(record.toJSON(), [
+              'trial_id',
+              'public_title',
+              'brief_summary',
+              'target_sample_size',
+              'gender',
+              'registration_date',
+            ]);
+            trial_id = baseFields.trial_id;
+
+            return factory.create('record', baseFields);
+          })
+          .then(() => new Trial({ id: trial_id }).fetch({ withRelated: 'records' }))
+          .then((trial) => should(trial.has_discrepancies).be.false());
+      });
+
+      it('returns true if there\'re discrepancies in the records', () => {
+        let trial_id;
+
+        return factory.create('trial')
+          .then((trial) => trial_id = trial.attributes.id)
+          .then(() => factory.createMany('record', [{ trial_id }, { trial_id, brief_summary: 'foobar' }], 2))
+          .then(() => new Trial({ id: trial_id }).fetch({ withRelated: 'records' }))
+          .then((trial) => should(trial.has_discrepancies).be.true());
+      });
     });
   });
 });

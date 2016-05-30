@@ -1,7 +1,10 @@
+'use strict';
+
 require('./trial');
 
 const bookshelf = require('../../config').bookshelf;
 const BaseModel = require('./base');
+const helpers = require('../helpers');
 
 const Intervention = BaseModel.extend({
   tableName: 'interventions',
@@ -11,8 +14,12 @@ const Intervention = BaseModel.extend({
     'type',
   ],
   trials: function () {
-    return this.belongsToMany('Trial', 'trials_interventions',
-      'intervention_id', 'trial_id').withPivot(['role']);
+    return this.belongsToMany('Trial', 'trials_interventions');
+  },
+  virtuals: {
+    url: function () {
+      return helpers.urlFor(this);
+    },
   },
 });
 
